@@ -18,7 +18,7 @@ Road and trail detail comes from the normal map's imagery. The mod does not gene
 ## Requirements
 
 - Windows, 64-bit version of **over the hill**.
-- MelonLoader **0.7.3**, configured for the game's IL2CPP build.
+- MelonLoader **0.7.3**, configured for the game's IL2CPP build. https://github.com/lavagang/MelonLoader/releases
 - The .NET runtime required by MelonLoader; this build was compiled against .NET **6.0.36**.
 
 Developed against game version **0.0.1**, Unity **6000.0.75f1**. Compatibility with other game or loader versions is unverified.
