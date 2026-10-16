@@ -15,7 +15,6 @@ internal sealed class PoiMarkers
     private sealed class Marker
     {
         public PointOfInterest Poi;
-        public PointOfInterestMapIcon Native;
         public RectTransform Root;
         public Image Background;
         public Image Icon;
@@ -52,11 +51,10 @@ internal sealed class PoiMarkers
                 if (!markers.TryGetValue(id, out var marker))
                 {
                     var root = Rect("POI " + id, parent, Vector2.zero, new Vector2(26, 26));
-                    markers.Add(id, marker = new Marker { Poi = poi, Native = original, Root = root,
+                    markers.Add(id, marker = new Marker { Poi = poi, Root = root,
                         Background = Image("Background", root, new Vector2(26, 26)),
                         Icon = Image("Icon", root, new Vector2(21, 21)) });
                 }
-                marker.Native = original;
                 var data = original.PointOfInterestData;
                 // Only show POIs already visible in the player's saved discovery state.
                 bool visible = data != null ? data.CurrentState != PointOfInterestData.State.Hidden : marker.Root.gameObject.activeSelf;
@@ -128,11 +126,6 @@ internal sealed class PoiMarkers
             MelonLoader.MelonLogger.Msg($"[Minimap] POIs using world projection: {inView} within current crop, {markers.Count} total; crop={crop}.");
             var imageRect = renderedMap.rectTransform;
             MelonLoader.MelonLogger.Msg($"[Minimap] Rendered map quad: rect={imageRect.rect}, position={imageRect.localPosition}, scale={imageRect.localScale}, uv={renderedMap.uvRect}.");
-            foreach (var entry in markers.Values.Where(m => m.Poi && m.Root && m.Root.gameObject.activeSelf)
-                .OrderBy(m => m.Root.localPosition.sqrMagnitude).Take(3))
-            {
-                MelonLoader.MelonLogger.Msg($"[Minimap] POI sample {entry.Poi.GetInstanceID()}: world={entry.Poi.transform.position}, nativeAnchor={entry.Native?.rectTransform.anchoredPosition}, rendered={entry.Root.localPosition}, sprite={entry.Icon.sprite?.name}.");
-            }
         }
     }
 

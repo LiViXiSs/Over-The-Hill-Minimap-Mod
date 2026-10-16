@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(OverTheHill.Minimap), "Minimap", "0.4.6", "Minimap contributors")]
+[assembly: MelonInfo(typeof(OverTheHill.Minimap), "Minimap", "0.4.7", "Minimap contributors")]
 [assembly: MelonGame("Funselektor", "over the hill")]
 
 namespace OverTheHill;

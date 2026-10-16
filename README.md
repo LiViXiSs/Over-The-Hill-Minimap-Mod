@@ -2,7 +2,7 @@
 
 A client-side minimap mod for **over the hill**, built with MelonLoader. Keep a map in the corner of your screen while driving, with adjustable zoom and live updates.
 
-**Current version: 0.4.6 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
+**Current version: 0.4.7 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
 
 ## Features
 
@@ -124,6 +124,14 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 
 ## Changelog
 
+### 0.4.7
+
+- Removes obsolete native-icon references from POI diagnostic logging.
+- Fixes the reported NullReferenceException in RectTransform.get_anchoredPosition when a cached native map icon has been destroyed.
+- Keeps the working world projection, discovery updates, and compact controls.
+- Version 0.4.6 marker alignment was confirmed working in user testing; this logging fix awaits runtime verification.
+
+
 ### 0.4.6
 
 - Removes the POI update early return when the full map or its icon dictionary is unavailable.
@@ -214,6 +222,7 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 The latest Release build compiles with zero warnings and zero errors. That confirms compilation only; visual accuracy and multiplayer compatibility require in-game testing.
 
 This is an unofficial community mod and is not affiliated with or endorsed by the game's developers.
+
 
 
 
