@@ -2,7 +2,7 @@
 
 A client-side minimap mod for **over the hill**, built with MelonLoader. Keep a map in the corner of your screen while driving, with adjustable zoom and live updates.
 
-**Current version: 0.4.3 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
+**Current version: 0.4.6 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
 
 ## Features
 
@@ -124,6 +124,29 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 
 ## Changelog
 
+### 0.4.6
+
+- Removes the POI update early return when the full map or its icon dictionary is unavailable.
+- Cached POIs continue reprojecting onto the rendered terrain every frame, including zoom changes after closing the full map.
+- Falls back to the same live fog-grid projection used by the basic map when the native map view is unavailable.
+- Runtime verification of the closed-map zoom case is pending.
+
+
+### 0.4.5
+
+- Positions POI centers directly on the rendered map quad using its actual local rectangle, scale, rotation, and origin.
+- Logs map geometry and nearby marker positions on zoom changes to diagnose remaining terrain/marker drift.
+- This is a diagnostic build; the reported zoom-alignment bug is not yet confirmed resolved.
+
+
+### 0.4.4
+
+- Uses POI world positions through the native WorldToUIPosition conversion every frame, matching MapView.UpdateObjectives in the installed game build.
+- Removes POI position sampling/caching from the full map UI, which can change with layout and zoom.
+- Retains sprite caching, discovery updates, and compact controls.
+- Native placement was inspected at RVA 0x9F43C9–0x9F442C and 0x9F44B3–0x9F452E; visual regression verification is pending.
+
+
 ### 0.4.3
 
 - Converts POI positions through the full icon-to-map transform hierarchy rather than treating parent-relative anchored positions as map coordinates.
@@ -191,6 +214,9 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 The latest Release build compiles with zero warnings and zero errors. That confirms compilation only; visual accuracy and multiplayer compatibility require in-game testing.
 
 This is an unofficial community mod and is not affiliated with or endorsed by the game's developers.
+
+
+
 
 
 

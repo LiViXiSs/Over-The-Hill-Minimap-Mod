@@ -11,6 +11,7 @@ internal sealed class PoiMarkers
     private float nextRefresh;
     private bool reported;
     private float nextPositionReport;
+    private float lastReportedSpan = -1;
     private sealed class Marker
     {
         public PointOfInterest Poi;
@@ -18,8 +19,6 @@ internal sealed class PoiMarkers
         public RectTransform Root;
         public Image Background;
         public Image Icon;
-        public Vector2 MapPosition;
-        public bool HasPosition;
     }
 
     public void Reset()
@@ -30,13 +29,15 @@ internal sealed class PoiMarkers
         nextRefresh = 0;
         reported = false;
         nextPositionReport = 0;
+        lastReportedSpan = -1;
     }
 
-    public void Update(RectTransform parent, NativeMapMirror native, Rect crop, float width)
+    public void Update(RectTransform parent, NativeMapMirror native, RawImage renderedMap, Rect crop, float width)
     {
         var source = native.Source;
-        if (!source || source.POIMapIconsByPOI == null) return;
-        if (Time.unscaledTime >= nextRefresh)
+        // The full-map UI may release its dictionary when closed. Only sprite/data
+        // reconciliation depends on that UI; existing markers must still move on zoom.
+        if (Time.unscaledTime >= nextRefresh && source && source.POIMapIconsByPOI != null)
         {
             nextRefresh = Time.unscaledTime + 0.2f;
             var present = new HashSet<int>();
@@ -98,27 +99,40 @@ internal sealed class PoiMarkers
         foreach (var marker in markers.Values)
         {
             if (!marker.Poi || !marker.Root || !marker.Root.gameObject.activeSelf) continue;
-            // POI components can be attached to a logical/manager transform rather
-            // than the map location. The native icon already stores the map position.
-            // anchoredPosition belongs to the icon's immediate parent, not the map.
-            // Convert the complete hierarchy, cancelling map pan/zoom and shared ancestors.
-            if (marker.Native && (source.gameObject.activeInHierarchy || !marker.HasPosition) &&
-                native.TryGetIconPosition(marker.Native.rectTransform, out var normalized))
+            // Matches native MapView.UpdateObjectives: POI.transform.position ->
+            // WorldToUIPosition. Never sample or cache the full map's zoomed UI transforms.
+            Vector2 position;
+            if (native.TryGetCrop(marker.Poi.transform.position, 1, out var location)) position = location.center;
+            else
             {
-                marker.MapPosition = normalized;
-                marker.HasPosition = true;
+                var manager = MapManager.Instance;
+                if (!manager || manager.FogOfWarManager == null) continue;
+                var grid = manager.FogOfWarManager.WorldToGridPosition(marker.Poi.transform.position);
+                position = grid / FogOfWarManager.FowArraySize;
             }
-            if (!marker.HasPosition) continue;
-            var position = marker.MapPosition;
-            marker.Root.anchoredPosition = new Vector2((position.x - crop.x) / crop.width * width,
-                (position.y - crop.y) / crop.height * width);
+            // Attach the marker to the actual rendered map quad. Do not calculate a
+            // second screen-space crop: its pivot/scale/origin can differ from the image.
+            var rect = renderedMap.rectTransform.rect;
+            var pointOnImage = new Vector3(rect.xMin + position.x * rect.width,
+                rect.yMin + position.y * rect.height, 0);
+            var transform = renderedMap.rectTransform;
+            marker.Root.localPosition = transform.localPosition + transform.localRotation *
+                Vector3.Scale(pointOnImage, transform.localScale);
             marker.Root.localRotation = Quaternion.Inverse(parent.localRotation);
             if (crop.Contains(position)) inView++;
         }
-        if (Time.unscaledTime >= nextPositionReport && markers.Count > 0)
+        if ((Time.unscaledTime >= nextPositionReport || Mathf.Abs(lastReportedSpan - crop.width) > 0.00001f) && markers.Count > 0)
         {
+            lastReportedSpan = crop.width;
             nextPositionReport = Time.unscaledTime + 30;
-            MelonLoader.MelonLogger.Msg($"[Minimap] POI positions from native map: {inView} within current crop, {markers.Count} total; crop={crop}.");
+            MelonLoader.MelonLogger.Msg($"[Minimap] POIs using world projection: {inView} within current crop, {markers.Count} total; crop={crop}.");
+            var imageRect = renderedMap.rectTransform;
+            MelonLoader.MelonLogger.Msg($"[Minimap] Rendered map quad: rect={imageRect.rect}, position={imageRect.localPosition}, scale={imageRect.localScale}, uv={renderedMap.uvRect}.");
+            foreach (var entry in markers.Values.Where(m => m.Poi && m.Root && m.Root.gameObject.activeSelf)
+                .OrderBy(m => m.Root.localPosition.sqrMagnitude).Take(3))
+            {
+                MelonLoader.MelonLogger.Msg($"[Minimap] POI sample {entry.Poi.GetInstanceID()}: world={entry.Poi.transform.position}, nativeAnchor={entry.Native?.rectTransform.anchoredPosition}, rendered={entry.Root.localPosition}, sprite={entry.Icon.sprite?.name}.");
+            }
         }
     }
 

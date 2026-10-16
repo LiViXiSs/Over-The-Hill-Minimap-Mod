@@ -9,18 +9,6 @@ namespace OverTheHill;
 internal sealed class NativeMapMirror
 {
     internal MapView Source { get { FindSource(); return source; } }
-    internal bool TryGetIconPosition(RectTransform icon, out Vector2 position)
-    {
-        position = default;
-        if (!source || !source.mapRawImage || !icon) return false;
-        var map = source.mapRawImage.rectTransform;
-        if (map.rect.width <= 0 || map.rect.height <= 0) return false;
-        BuildMapAncestors(map);
-        GetProjectedCorners(icon, map, new Rect(0, 0, 1, 1), 1, out _, out var p1, out var p3);
-        position = (p1 + p3) / 2;
-        return !float.IsNaN(position.x) && !float.IsNaN(position.y) &&
-            !float.IsInfinity(position.x) && !float.IsInfinity(position.y);
-    }
     private MapView source;
     private float nextSearch;
     private float nextRefresh;

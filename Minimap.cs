@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-[assembly: MelonInfo(typeof(OverTheHill.Minimap), "Minimap", "0.4.3", "Minimap contributors")]
+[assembly: MelonInfo(typeof(OverTheHill.Minimap), "Minimap", "0.4.6", "Minimap contributors")]
 [assembly: MelonGame("Funselektor", "over the hill")]
 
 namespace OverTheHill;
@@ -151,7 +151,7 @@ public sealed class Minimap : MelonMod
         }
         marker.localRotation = Quaternion.Euler(0, 0, -heading);
         bool mirrored = nativeMap.Update(content, mapImage, fogImage, uv, width);
-        pois.Update(content, nativeMap, uv, width);
+        pois.Update(content, nativeMap, mapImage, uv, width);
         marker.gameObject.SetActive(false);
         players.Update(content, nativeMap, uv, width, MapManager.Instance);
     }
