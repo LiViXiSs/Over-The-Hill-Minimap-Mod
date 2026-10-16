@@ -2,15 +2,17 @@
 
 A client-side minimap mod for **over the hill**, built with MelonLoader. Keep a map in the corner of your screen while driving, with adjustable zoom and live updates.
 
-**Current version: 0.2.1 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
+**Current version: 0.4.3 — experimental.** Position alignment, icon visibility, roads/trails, and multiplayer markers are still being tested. This version includes fixes for previously reported alignment and missing-icon issues; those fixes have not yet been verified in-game.
 
 ## Features
 
-- North-up minimap in the upper-right corner, centered on your vehicle.
+- Minimap in the upper-right corner, centered on your vehicle, with optional heading-up rotation.
 - Adjustable zoom and map size.
 - Uses the game's map imagery and fog of war.
 - Mirrors the normal map's icon sprites, colors, rotation, and visibility.
-- Refreshes player indicators and received multiplayer markers while the full map is closed.
+- Shows local and remote vehicle markers using the game-assigned multiplayer colors. Your marker has a white outline.
+- Updates player positions/headings every frame and reconciles joins, leaves, and colors every 0.5 seconds.
+- Refreshes received multiplayer pins while the full map is closed.
 - Uses a local Unity canvas without changing matchmaking or replicated game state.
 
 Road and trail detail comes from the normal map's imagery. The mod does not generate additional routes or reveal unexplored areas. Matching the full map's appearance remains a work in progress.
@@ -18,7 +20,7 @@ Road and trail detail comes from the normal map's imagery. The mod does not gene
 ## Requirements
 
 - Windows, 64-bit version of **over the hill**.
-- MelonLoader **0.7.3**, configured for the game's IL2CPP build. https://github.com/lavagang/MelonLoader/releases
+- MelonLoader **0.7.3**, configured for the game's IL2CPP build.
 - The .NET runtime required by MelonLoader; this build was compiled against .NET **6.0.36**.
 
 Developed against game version **0.0.1**, Unity **6000.0.75f1**. Compatibility with other game or loader versions is unverified.
@@ -47,10 +49,11 @@ Steam's **Manage → Browse local files** opens the game folder. If building fro
 | Key | Action |
 | --- | --- |
 | **F6** | Show or hide the minimap |
+| **F7** or **Rotate: ON/OFF** button | Toggle player-following rotation |
 | **Page Up** | Zoom in |
 | **Page Down** | Zoom out |
 
-Place or change markers through the normal map. The minimap is a display overlay and does not accept clicks or place markers itself.
+All four controls are also clickable buttons below the minimap. The controls stay visible when F6 hides the map. Place or change markers through the normal map; the minimap does not place markers.
 
 ## Live updates
 
@@ -65,6 +68,7 @@ After the first launch, look for the `Minimap` category in MelonLoader's prefere
 | Setting | Default | Purpose |
 | --- | --- | --- |
 | `Enabled` | `true` | Show the minimap |
+| `RotateWithPlayer` | `true` | Keep your heading at the top; disable for north-up |
 | `Size` | `260` | Map width and height in pixels at 1080p; scales with screen height |
 | `WorldSpan` | `1000` | Width of the visible area in world units; smaller values zoom in |
 
@@ -120,6 +124,48 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 
 ## Changelog
 
+### 0.4.3
+
+- Converts POI positions through the full icon-to-map transform hierarchy rather than treating parent-relative anchored positions as map coordinates.
+- Caches normalized positions while the full map is closed and retains markers through temporary native UI dictionary/sprite rebuilds.
+- Reduces the controls footer from four rows to two compact rows, with smaller buttons and text.
+- Position stability and visibility still require an in-game regression check.
+
+
+### 0.4.2
+
+- Uses native map-icon anchored positions for POIs instead of logical POI object transforms.
+- Logs the number of POIs within the current map crop to diagnose missing markers.
+- Adds clickable Map (F6), Rotate (F7), Zoom in (Page Up), and Zoom out (Page Down) controls below the map.
+- Keeps the controls visible when the map is hidden so it can be restored by clicking.
+
+
+### 0.4.1
+
+- Added dedicated discovered-POI markers using native icon sprites and POI world positions.
+- Uses fixed-size glyphs and the default UI material so closed-map layout, zoom, and shaders cannot shrink or hide POI icons.
+- Refreshes discovery state and sprite changes every 0.2 seconds; keeps icons upright when the map rotates.
+- Adds a diagnostic count of known POIs and discovered entries with sprites.
+- In-game POI visibility verification is pending.
+
+
+### 0.4.0
+
+- Replaced the player indicator with a heading marker tinted by the game-assigned player color.
+- Added live markers for remote player vehicles already replicated to your client.
+- Added join/leave cleanup and color refresh without requiring the full map to be open.
+- Suppressed duplicate normal-map player graphics while retaining shared pins and POIs.
+- Multiplayer color/position behavior requires an in-game session check. Players outside the current minimap view are clipped; no off-screen arrows are added.
+
+
+### 0.3.0
+
+- Added saved heading-up rotation with a clickable toggle and F7 shortcut.
+- Keeps the map frame fixed while rotating map imagery, fog, and markers together.
+- Refreshes already-discovered fog pixels and advances native POI discovery scans while the full map is closed.
+- Uses current map/fog textures when the game replaces them.
+
+
 ### 0.2.1
 
 - Corrected the 1024-unit fog-grid versus 512-pixel texture conversion.
@@ -145,3 +191,8 @@ Game and MelonLoader assemblies are referenced locally and are not bundled in th
 The latest Release build compiles with zero warnings and zero errors. That confirms compilation only; visual accuracy and multiplayer compatibility require in-game testing.
 
 This is an unofficial community mod and is not affiliated with or endorsed by the game's developers.
+
+
+
+
+

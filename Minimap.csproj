@@ -11,10 +11,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="diagnostics/**/*.cs" />
-    <Reference Include="C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\System.*.dll;C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\mscorlib.dll;C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\netstandard.dll"><Private>false</Private></Reference>
+    <Reference Exclude="C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\System.IO.Compression.Native.dll" Include="C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\System.*.dll;C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\mscorlib.dll;C:\Program Files\dotnet\shared\Microsoft.NETCore.App\6.0.36\netstandard.dll"><Private>false</Private></Reference>
     <Reference Include="$(GameDir)\MelonLoader\Il2CppAssemblies\*.dll"><Private>false</Private></Reference>
     <Reference Include="$(GameDir)\MelonLoader\net6\MelonLoader.dll"><Private>false</Private></Reference>
     <Reference Include="$(GameDir)\MelonLoader\net6\Il2CppInterop.Runtime.dll"><Private>false</Private></Reference>
   </ItemGroup>
 </Project>
+
 

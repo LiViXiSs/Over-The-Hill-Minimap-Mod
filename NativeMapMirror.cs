@@ -8,9 +8,23 @@ namespace OverTheHill;
 // Copy graphics only: never clone map controllers, input handlers, or networking components.
 internal sealed class NativeMapMirror
 {
+    internal MapView Source { get { FindSource(); return source; } }
+    internal bool TryGetIconPosition(RectTransform icon, out Vector2 position)
+    {
+        position = default;
+        if (!source || !source.mapRawImage || !icon) return false;
+        var map = source.mapRawImage.rectTransform;
+        if (map.rect.width <= 0 || map.rect.height <= 0) return false;
+        BuildMapAncestors(map);
+        GetProjectedCorners(icon, map, new Rect(0, 0, 1, 1), 1, out _, out var p1, out var p3);
+        position = (p1 + p3) / 2;
+        return !float.IsNaN(position.x) && !float.IsNaN(position.y) &&
+            !float.IsInfinity(position.x) && !float.IsInfinity(position.y);
+    }
     private MapView source;
     private float nextSearch;
     private float nextRefresh;
+    private float nextFogRefresh;
     private readonly Dictionary<int, Copy> copies = new();
     private readonly Dictionary<IntPtr, Matrix4x4> mapAncestors = new();
     private readonly HashSet<int> seen = new();
@@ -18,6 +32,7 @@ internal sealed class NativeMapMirror
     private RectTransform above;
     private bool reported;
     private bool geometryReported;
+    private Il2CppSystem.Collections.Generic.IEnumerator<float> discoveryScan;
     private sealed class Copy
     {
         public Graphic Original;
@@ -26,8 +41,9 @@ internal sealed class NativeMapMirror
 
     public void Reset()
     {
+        discoveryScan = null;
         source = null;
-        nextSearch = nextRefresh = 0;
+        nextSearch = nextRefresh = nextFogRefresh = 0;
         reported = false;
         geometryReported = false;
         Clear();
@@ -104,6 +120,18 @@ internal sealed class NativeMapMirror
             // never run MapView.Update (cursor/input), OnEnable, or a map controller.
             if (!source.gameObject.activeInHierarchy)
             {
+                // The native POI scan normally runs only while the map is open.
+                // Advance its UI-only discovery iterator without opening the screen.
+                if (discoveryScan == null) discoveryScan = source.CheckPointsOfInterest();
+                for (int step = 0; step < 8 && discoveryScan != null; step++)
+                    if (!discoveryScan.Cast<Il2CppSystem.Collections.IEnumerator>().MoveNext()) discoveryScan = null;
+                var manager = MapManager.Instance;
+                if (manager && manager.FogOfWarManager != null && Time.unscaledTime >= nextFogRefresh)
+                {
+                    nextFogRefresh = Time.unscaledTime + 0.25f;
+                    // Upload the game's already-discovered fog pixels; never reveal new areas ourselves.
+                    manager.FogOfWarManager.ApplyFogOfWarTexture();
+                }
                 source.UpdatePlayerIndicators();
                 source.UpdateMapMovingIndicators();
                 if (MapNetworkManager.Instance) source.UpdatePlayersPinpoints();
@@ -111,6 +139,7 @@ internal sealed class NativeMapMirror
                     foreach (var pair in source.POIMapIconsByPOI)
                         if (pair.Value) pair.Value.UpdateIconAndVisibility();
             }
+            else discoveryScan = null;
             Reconcile(source.behindFogOfWarTransform, below);
             Reconcile(source.aboveFogOfWarTransform, above, false);
             // Some map prefabs keep player/pin containers outside the POI layers.
@@ -138,6 +167,10 @@ internal sealed class NativeMapMirror
             fog.material = source.fogOfWarRawImage.material;
             fog.color = source.fogOfWarRawImage.color;
         }
+        var liveManager = MapManager.Instance;
+        if (liveManager && liveManager.MapTexture) map.texture = liveManager.MapTexture;
+        if (liveManager && liveManager.FogOfWarManager != null && liveManager.FogOfWarManager.FogOfWarTexture)
+            fog.texture = liveManager.FogOfWarManager.FogOfWarTexture;
         var mapRect = source.mapRawImage.rectTransform;
         BuildMapAncestors(mapRect);
         // Map and fog need their own geometry: the native map has border padding,
@@ -178,6 +211,10 @@ internal sealed class NativeMapMirror
             if (source.cursorGameObject && graphic.transform.IsChildOf(source.cursorGameObject.transform)) continue;
             var image = graphic.TryCast<Image>();
             var raw = graphic.TryCast<RawImage>();
+            // PlayerMarkers owns live colored vehicle indicators, including remote players.
+            // Keep native shared pins and POIs, but avoid duplicate player symbols.
+            if (graphic.GetComponentInParent<MapPlayerImage>(true)) continue;
+            if (graphic.GetComponentInParent<PointOfInterestMapIcon>(true)) continue;
             if (!image && !raw) continue;
             int id = graphic.GetInstanceID();
             seen.Add(id);
@@ -223,7 +260,7 @@ internal sealed class NativeMapMirror
         if (image)
         {
             var dest = copy.Graphic.Cast<Image>();
-            dest.sprite = image.overrideSprite;
+            dest.sprite = image.overrideSprite ? image.overrideSprite : image.sprite;
             dest.type = image.type;
             dest.preserveAspect = image.preserveAspect;
             dest.fillAmount = image.fillAmount;
